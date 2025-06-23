@@ -34,10 +34,6 @@ export async function stakeWithSolayer(agent: SolanaAgentKit, amount: number) {
       Buffer.from(data.transaction, "base64"),
     );
 
-    // Update blockhash
-    const { blockhash } = await agent.connection.getLatestBlockhash();
-    txn.message.recentBlockhash = blockhash;
-
     // Use wallet methods directly to avoid signOrSendTX issues
     if (agent.config?.signOnly) {
       return await agent.wallet.signTransaction(txn);
