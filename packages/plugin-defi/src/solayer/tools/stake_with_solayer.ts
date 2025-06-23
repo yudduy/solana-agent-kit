@@ -1,5 +1,5 @@
 import { VersionedTransaction } from "@solana/web3.js";
-import { type SolanaAgentKit, signOrSendTX } from "solana-agent-kit";
+import { type SolanaAgentKit } from "solana-agent-kit";
 
 /**
  * Stake SOL with Solayer
@@ -38,7 +38,18 @@ export async function stakeWithSolayer(agent: SolanaAgentKit, amount: number) {
     const { blockhash } = await agent.connection.getLatestBlockhash();
     txn.message.recentBlockhash = blockhash;
 
-    return await signOrSendTX(agent, txn);
+    // Use wallet methods directly to avoid signOrSendTX issues
+    if (agent.config?.signOnly) {
+      return await agent.wallet.signTransaction(txn);
+    }
+
+    // Use signAndSendTransaction directly since we know KeypairWallet has it
+    if (agent.wallet.signAndSendTransaction) {
+      const result = await agent.wallet.signAndSendTransaction(txn);
+      return result.signature;
+    }
+
+    throw new Error("Wallet does not support signAndSendTransaction");
   } catch (error: any) {
     console.error(error);
     throw new Error(`Solayer sSOL staking failed: ${error.message}`);

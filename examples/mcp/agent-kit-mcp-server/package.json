@@ -13,6 +13,10 @@
   "files": [
     "build"
   ],
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=8.0.0"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -24,7 +28,9 @@
     "@solana/web3.js": "^1.98.2",
     "bs58": "^6.0.0",
     "dotenv": "^16.4.7",
+    "rpc-websockets": "7.10.0",
     "solana-agent-kit": "2.0.3",
+    "web-streams-polyfill": "^4.1.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

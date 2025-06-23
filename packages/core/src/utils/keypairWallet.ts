@@ -95,7 +95,7 @@ export class KeypairWallet implements BaseWallet {
     options?: SendOptions,
   ): Promise<{ signature: TransactionSignature }> {
     const connection = new Connection(this.rpcUrl);
-    if (transaction instanceof VersionedTransaction) {
+    if (isVersionedTransaction(transaction)) {
       transaction.sign([this.payer]);
     } else {
       transaction.partialSign(this.payer);
