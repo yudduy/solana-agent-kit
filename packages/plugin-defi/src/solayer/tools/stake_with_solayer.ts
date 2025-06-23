@@ -82,13 +82,14 @@ export async function stakeWithSolayer(agent: SolanaAgentKit, amount: number) {
       return rawSig;
     }
 
-    // Use signAndSendTransaction directly since we know KeypairWallet has it
-    if (agent.wallet.signAndSendTransaction) {
-      const result = await agent.wallet.signAndSendTransaction(txn);
-      return result.signature;
-    }
+    // --------- PRODUCTION SEND PATH ---------
+    // Fallback: sign locally and broadcast with skipPreflight to save ~400ms simulation
+    await agent.wallet.signTransaction(txn);
 
-    throw new Error("Wallet does not support signAndSendTransaction");
+    return await agent.connection.sendRawTransaction(txn.serialize(), {
+      skipPreflight: true,
+      preflightCommitment: "confirmed",
+    });
   } catch (error: any) {
     console.error(error);
     throw new Error(`Solayer sSOL staking failed: ${error.message}`);
