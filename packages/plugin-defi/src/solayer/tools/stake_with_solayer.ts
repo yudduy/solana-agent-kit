@@ -34,9 +34,52 @@ export async function stakeWithSolayer(agent: SolanaAgentKit, amount: number) {
       Buffer.from(data.transaction, "base64"),
     );
 
+    // ==================== DEBUG INSTRUMENTATION ====================
+    const DEBUG = process.env.SOLAYER_DEBUG === "1" || process.env.SOLAYER_DEBUG === "true";
+
+    if (DEBUG) {
+      console.error("[SOLAYER_DEBUG] --- Transaction deserialized ---");
+      console.error("[SOLAYER_DEBUG] Required signers:", txn.message.header.numRequiredSignatures);
+      console.error(
+        "[SOLAYER_DEBUG] Signatures pre-sign:",
+        txn.signatures.map((s, i) => ({ index: i, present: s !== null })),
+      );
+    }
+
+    // ==================== SIGN-ONLY PATH ====================
     // Use wallet methods directly to avoid signOrSendTX issues
     if (agent.config?.signOnly) {
+      if (DEBUG) console.error("[SOLAYER_DEBUG] signOnly flag true – signing transaction only");
       return await agent.wallet.signTransaction(txn);
+    }
+
+    // ==================== DEBUG SIGN & SEND ====================
+    if (DEBUG) {
+      // Sign without sending to inspect signatures array
+      await agent.wallet.signTransaction(txn);
+
+      console.error(
+        "[SOLAYER_DEBUG] Signatures post-sign:",
+        txn.signatures.map((s, i) => ({ index: i, present: s !== null })),
+      );
+
+      // Simulate with sig verification to ensure validator view
+      try {
+        const sim = await agent.connection.simulateTransaction(txn, {
+          sigVerify: true,
+        });
+        console.error("[SOLAYER_DEBUG] Simulation result:", JSON.stringify(sim.value.err));
+      } catch (err: any) {
+        console.error("[SOLAYER_DEBUG] Simulation error:", err?.message || err);
+      }
+
+      // Send raw transaction (skipPreflight false to surface sig errors)
+      const rawSig = await agent.connection.sendRawTransaction(txn.serialize(), {
+        skipPreflight: false,
+      });
+
+      console.error("[SOLAYER_DEBUG] Broadcast signature:", rawSig);
+      return rawSig;
     }
 
     // Use signAndSendTransaction directly since we know KeypairWallet has it
